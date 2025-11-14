@@ -1,5 +1,5 @@
 import "./globals.css";
-
+import { AuthProvider } from "@/context/authContext";
 export const metadata = {
   title: "Calendar Assistant",
   description: "Routing shell for dashboard / calendar / groups / AI",
@@ -13,7 +13,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-background text-foreground">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

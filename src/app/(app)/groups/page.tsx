@@ -1,9 +1,12 @@
 "use client";
 import { useAppState } from "@/state/AppStateContext";
 import { Button } from "@/components/ui/button";
+import Collapsible from "@/components/groups/collapse-box";
+import { useState } from "react";
 
 export default function GroupsPage() {
   const { groups } = useAppState();
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Groups</h1>
