@@ -4,44 +4,40 @@ import { useState, useEffect, createContext, useContext } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/app/firebase/firebase";
 
-//empty container to hold all the auth related data and functions
-const AuthContext = createContext();
+// Empty container to hold all the auth related data and functions
+const AuthContext = createContext(null);
 
-//hook to access the auth context
+// Hook to access the auth context
 export function useAuth() {
   return useContext(AuthContext);
 }
 
-//provider to wrap the app and provide the auth context to the children
+// Provider to wrap the app and provide the auth context to the children
 export const AuthProvider = ({ children }) => {
-  //state to hold the current user and if they are logged in
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  //effect to listen for changes in the user's authentication state
+  // Set up Firebase auth state listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUser(user);
-        setUserLoggedIn(true);
-      } else {
-        setCurrentUser(null);
-        setUserLoggedIn(false);
-      }
+      setCurrentUser(user);
+      setUserLoggedIn(!!user);
       setLoading(false);
     });
-    return unsubscribe;
+
+    // Cleanup on unmount
+    return () => unsubscribe();
   }, []);
 
-  //value to be provided to the children
+  // Value to be provided to the children
   const value = {
     currentUser,
     userLoggedIn,
     loading,
   };
 
-  //return the provider with the value and the children
+  // Only render children once we've resolved initial auth state
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
