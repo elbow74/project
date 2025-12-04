@@ -100,40 +100,40 @@ export function CalendarView({
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border p-8 text-center">
-        <p className="text-muted-foreground">Loading calendar...</p>
+      <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-8 text-center">
+        <p className="text-white">Loading calendar...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border p-8 text-center">
-        <p className="text-red-600">{error}</p>
+      <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-8 text-center">
+        <p className="text-red-400">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border p-4">
+    <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-4">
       {/* Calendar Header */}
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {/* Month navigation */}
         <div className="flex items-center gap-2">
           <button
             onClick={goToPreviousMonth}
-            className="rounded px-3 py-1 hover:bg-accent"
+            className="rounded px-3 py-1 text-white hover:bg-gray-700"
           >
             ←
           </button>
 
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-bold text-white">
               {monthNames[month]} {year}
             </h2>
             <button
               onClick={goToToday}
-              className="rounded px-3 py-1 text-sm hover:bg-accent"
+              className="rounded px-3 py-1 text-sm text-white hover:bg-gray-700"
             >
               Today
             </button>
@@ -141,7 +141,7 @@ export function CalendarView({
 
           <button
             onClick={goToNextMonth}
-            className="rounded px-3 py-1 hover:bg-accent"
+            className="rounded px-3 py-1 text-white hover:bg-gray-700"
           >
             →
           </button>
@@ -154,7 +154,7 @@ export function CalendarView({
             className={`rounded px-3 py-1 text-sm ${
               viewMode === "month"
                 ? "bg-blue-600 text-white"
-                : "hover:bg-accent"
+                : "text-white hover:bg-gray-700"
             }`}
           >
             Month
@@ -164,7 +164,7 @@ export function CalendarView({
             className={`rounded px-3 py-1 text-sm ${
               viewMode === "week"
                 ? "bg-blue-600 text-white"
-                : "hover:bg-accent"
+                : "text-white hover:bg-gray-700"
             }`}
           >
             Week
@@ -174,7 +174,7 @@ export function CalendarView({
             className={`rounded px-3 py-1 text-sm ${
               viewMode === "day"
                 ? "bg-blue-600 text-white"
-                : "hover:bg-accent"
+                : "text-white hover:bg-gray-700"
             }`}
           >
             Day
@@ -189,7 +189,7 @@ export function CalendarView({
           {dayNames.map((day) => (
             <div
               key={day}
-              className="p-2 text-center text-sm font-medium text-muted-foreground"
+              className="p-2 text-center text-sm font-semibold text-gray-300"
             >
               {day}
             </div>
@@ -199,7 +199,7 @@ export function CalendarView({
           {Array.from({ length: startingDayOfWeek }).map((_, index) => (
             <div
               key={`empty-${index}`}
-              className="min-h-[80px] rounded border"
+              className="min-h-[80px] rounded border-2 border-gray-600 bg-gray-700/30"
             />
           ))}
 
@@ -208,19 +208,18 @@ export function CalendarView({
             const day = index + 1;
             const date = new Date(year, month, day);
             const dayEvents = getEventsForDate(date);
-            const isToday =
-              date.toDateString() === new Date().toDateString();
+            const isToday = date.toDateString() === new Date().toDateString();
 
             return (
               <div
                 key={day}
-                className={`min-h-[80px] rounded border p-1 ${
-                  isToday ? "bg-blue-50 border-blue-300" : ""
+                className={`min-h-[80px] rounded border-2 border-gray-600 bg-gray-700/30 p-1 ${
+                  isToday ? "bg-blue-900/50 border-blue-500" : ""
                 }`}
               >
                 <div
-                  className={`mb-1 text-sm font-medium ${
-                    isToday ? "text-blue-600" : ""
+                  className={`mb-1 text-sm font-semibold ${
+                    isToday ? "text-blue-300" : "text-white"
                   }`}
                 >
                   {day}
@@ -229,14 +228,14 @@ export function CalendarView({
                   {dayEvents.slice(0, 3).map((event, eventIndex) => (
                     <div
                       key={event.id || eventIndex}
-                      className="truncate rounded bg-blue-100 px-1 text-xs text-blue-800"
+                      className="truncate rounded bg-blue-800/70 px-1 text-xs font-medium text-blue-200"
                       title={event.summary || "Event"}
                     >
                       {event.summary || "Event"}
                     </div>
                   ))}
                   {dayEvents.length > 3 && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs font-medium text-gray-400">
                       +{dayEvents.length - 3} more
                     </div>
                   )}
@@ -248,125 +247,131 @@ export function CalendarView({
       )}
 
       {/* ===================== WEEK VIEW ===================== */}
-      {viewMode === "week" && (() => {
-        const startOfWeek = getStartOfWeek(currentDate);
-        const weekDays = Array.from({ length: 7 }).map((_, index) => {
-          const d = new Date(startOfWeek);
-          d.setDate(startOfWeek.getDate() + index);
-          return d;
-        });
+      {viewMode === "week" &&
+        (() => {
+          const startOfWeek = getStartOfWeek(currentDate);
+          const weekDays = Array.from({ length: 7 }).map((_, index) => {
+            const d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + index);
+            return d;
+          });
 
-        return (
-          <div className="grid grid-cols-7 gap-1">
-            {/* Day headers with date */}
-            {weekDays.map((date) => {
-              const isToday =
-                date.toDateString() === new Date().toDateString();
-              return (
-                <div
-                  key={date.toISOString()}
-                  className="border-b p-2 text-center text-xs font-medium text-muted-foreground"
-                >
-                  <div>{dayNames[date.getDay()]}</div>
-                  <div className={isToday ? "text-blue-600" : ""}>
-                    {date.getMonth() + 1}/{date.getDate()}
+          return (
+            <div className="grid grid-cols-7 gap-1">
+              {/* Day headers with date */}
+              {weekDays.map((date) => {
+                const isToday =
+                  date.toDateString() === new Date().toDateString();
+                return (
+                  <div
+                    key={date.toISOString()}
+                    className="border-b-2 border-gray-600 p-2 text-center text-xs font-semibold"
+                  >
+                    <div className="text-gray-300">
+                      {dayNames[date.getDay()]}
+                    </div>
+                    <div
+                      className={
+                        isToday ? "text-blue-300 font-bold" : "text-white"
+                      }
+                    >
+                      {date.getMonth() + 1}/{date.getDate()}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            {/* Events per day */}
-            {weekDays.map((date) => {
-              const dayEvents = getEventsForDate(date);
-              const isToday =
-                date.toDateString() === new Date().toDateString();
+              {/* Events per day */}
+              {weekDays.map((date) => {
+                const dayEvents = getEventsForDate(date);
+                const isToday =
+                  date.toDateString() === new Date().toDateString();
 
-              return (
-                <div
-                  key={date.toISOString() + "-events"}
-                  className={`min-h-[120px] rounded border p-1 ${
-                    isToday ? "bg-blue-50 border-blue-300" : ""
-                  }`}
-                >
-                  <div className="space-y-1">
-                    {dayEvents.length === 0 && (
-                      <div className="text-xs text-muted-foreground">
-                        No events
-                      </div>
-                    )}
-                    {dayEvents.map((event, index) => (
-                      <div
-                        key={event.id || index}
-                        className="rounded bg-blue-100 px-1 py-0.5 text-[11px] text-blue-800"
-                      >
-                        <div className="truncate font-medium">
-                          {event.summary || "Event"}
+                return (
+                  <div
+                    key={date.toISOString() + "-events"}
+                    className={`min-h-[120px] rounded border-2 border-gray-600 bg-gray-700/30 p-1 ${
+                      isToday ? "bg-blue-900/50 border-blue-500" : ""
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      {dayEvents.length === 0 && (
+                        <div className="text-xs font-medium text-gray-400">
+                          No events
                         </div>
-                        <div className="truncate text-[10px]">
-                          {formatEventTime(event)}
+                      )}
+                      {dayEvents.map((event, index) => (
+                        <div
+                          key={event.id || index}
+                          className="rounded bg-blue-800/70 px-1 py-0.5 text-[11px] font-medium text-blue-200"
+                        >
+                          <div className="truncate font-semibold">
+                            {event.summary || "Event"}
+                          </div>
+                          <div className="truncate text-[10px] font-medium">
+                            {formatEventTime(event)}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        );
-      })()}
-
-      {/* ===================== DAY VIEW ===================== */}
-      {viewMode === "day" && (() => {
-        const dayEvents = getEventsForDate(currentDate).sort((a, b) => {
-          const aTime =
-            new Date(a.start?.dateTime || a.start?.date || "").getTime() ||
-            0;
-          const bTime =
-            new Date(b.start?.dateTime || b.start?.date || "").getTime() ||
-            0;
-          return aTime - bTime;
-        });
-
-        return (
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">
-              {currentDate.toLocaleDateString(undefined, {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                year: "numeric",
+                );
               })}
             </div>
+          );
+        })()}
 
-            {dayEvents.length === 0 && (
-              <div className="rounded border p-4 text-sm text-muted-foreground">
-                No events for this day.
+      {/* ===================== DAY VIEW ===================== */}
+      {viewMode === "day" &&
+        (() => {
+          const dayEvents = getEventsForDate(currentDate).sort((a, b) => {
+            const aTime =
+              new Date(a.start?.dateTime || a.start?.date || "").getTime() || 0;
+            const bTime =
+              new Date(b.start?.dateTime || b.start?.date || "").getTime() || 0;
+            return aTime - bTime;
+          });
+
+          return (
+            <div className="space-y-3">
+              <div className="text-base font-semibold text-white">
+                {currentDate.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               </div>
-            )}
 
-            {dayEvents.map((event, index) => (
-              <div
-                key={event.id || index}
-                className="rounded border p-3 text-sm"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="font-medium">
-                    {event.summary || "Event"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatEventTime(event)}
-                  </div>
+              {dayEvents.length === 0 && (
+                <div className="rounded border-2 border-gray-600 bg-gray-700/30 p-4 text-sm font-medium text-gray-400">
+                  No events for this day.
                 </div>
-                {event.description && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {event.description}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        );
-      })()}
+              )}
+
+              {dayEvents.map((event, index) => (
+                <div
+                  key={event.id || index}
+                  className="rounded border-2 border-gray-600 bg-gray-700/30 p-4 text-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-bold text-white">
+                      {event.summary || "Event"}
+                    </div>
+                    <div className="text-xs font-semibold text-gray-300">
+                      {formatEventTime(event)}
+                    </div>
+                  </div>
+                  {event.description && (
+                    <p className="mt-2 text-xs font-medium text-gray-400">
+                      {event.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
     </div>
   );
 }
