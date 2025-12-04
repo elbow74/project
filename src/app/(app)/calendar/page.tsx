@@ -5,7 +5,8 @@ import { fetchCalendarEvents } from "@/lib/calendar-client";
 import { CalendarView } from "@/components/calendar/CalendarView";
 
 export default function CalendarPage() {
-  const { currentUser } = useAuth();
+  const auth = useAuth() as { currentUser: any } | null;
+  const currentUser = auth?.currentUser;
   const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,8 +42,13 @@ export default function CalendarPage() {
   }, [currentUser]);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Calendar</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-white">Calendar</h1>
+        <p className="mt-1 text-sm text-gray-400">
+          View and manage your schedule
+        </p>
+      </div>
       <CalendarView events={events} isLoading={isLoading} error={error} />
     </div>
   );

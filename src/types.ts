@@ -16,7 +16,11 @@ export interface AuthUser {
 export interface Group {
   id: string;
   name: string;
-  members: string[];
+  ownerId: string;
+  code: string;
+  memberIds: string[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Event {

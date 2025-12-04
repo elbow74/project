@@ -18,7 +18,7 @@ type CalendarStatus = {
 } | null;
 
 export default function DashboardPage() {
-  const { users, events, groups } = useAppState();
+  const { events, groups } = useAppState();
   const { currentUser } = useAuth() as any;
 
   const [calendarStatus, setCalendarStatus] = useState<CalendarStatus>(null);
@@ -73,12 +73,14 @@ export default function DashboardPage() {
         const idToken = await currentUser.getIdToken();
         const result = await fetchCalendarEvents(idToken);
 
-        if (!result || !Array.isArray(result.events)) {
+        if (result && result.events) {
+          // Google Calendar API returns events in data.events.items
+          const eventsData = result.events as any;
+          const eventItems = eventsData.items || eventsData || [];
+          setCalendarEvents(Array.isArray(eventItems) ? eventItems : []);
+        } else {
           setCalendarEvents([]);
-          return;
         }
-
-        setCalendarEvents(result.events);
       } catch (e) {
         console.error("Failed to fetch calendar events", e);
         setEventsError("Failed to load calendar events");
@@ -91,7 +93,11 @@ export default function DashboardPage() {
   // Derived upcoming events list (sorted soonest-first, limited)
   const upcomingEvents = useMemo(() => {
     return calendarEvents
-      .filter((event) => event?.start?.dateTime || event?.start?.date)
+      .filter((event) => {
+        const start = event?.start?.dateTime || event?.start?.date;
+        if (!start) return false;
+        return new Date(start).getTime() > Date.now();
+      })
       .slice()
       .sort((a, b) => {
         const aDate = new Date(a.start.dateTime || a.start.date).getTime();
@@ -131,53 +137,93 @@ export default function DashboardPage() {
   };
 
   const dashboardTitle =
-    (currentUser?.displayName ||
-      currentUser?.email?.split("@")[0] ||
-      "Your") + "'s Dashboard";
+    (currentUser?.displayName || currentUser?.email?.split("@")[0] || "Your") +
+    "'s Dashboard";
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{dashboardTitle}</h1>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-white">{dashboardTitle}</h1>
+        <p className="mt-1 text-sm text-gray-400">
+          Overview of your calendar and activities
+        </p>
+      </div>
 
       {/* Summary stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Stat title="Users" value={users.length} />
+      <div className="grid gap-4 md:grid-cols-2">
         <Stat title="Events" value={events.length} />
         <Stat title="Groups" value={groups.length} />
       </div>
 
       {/* Calendar link status */}
-      <div className="rounded border p-4">
-        <div className="mb-2 font-medium">Calendar Link</div>
+      <div className="rounded-2xl bg-gray-800 p-6 shadow-lg border border-gray-700">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="h-10 w-10 rounded-lg bg-blue-900/50 flex items-center justify-center">
+            <svg
+              className="h-6 w-6 text-blue-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-white">Calendar Link</h3>
+            <p className="text-xs text-gray-400">Google Calendar integration</p>
+          </div>
+        </div>
         {calendarStatus === null ? (
-          <p className="text-sm text-muted-foreground">Checking status...</p>
+          <div className="flex items-center gap-2 text-sm text-gray-300">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-blue-400"></div>
+            <span>Checking status...</span>
+          </div>
         ) : calendarStatus.connected ? (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-green-600">✓ Connected</p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-green-400"></div>
+              <p className="text-sm font-semibold text-green-400">Connected</p>
+            </div>
             {calendarStatus.canAccessCalendar && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-400 pl-4">
                 Calendar access verified
               </p>
             )}
             {calendarStatus.accessTokenExpiresInSec && (
-              <p className="text-xs text-muted-foreground">
-                Access token expires in ~
-                {Math.round(calendarStatus.accessTokenExpiresInSec / 60)} min
+              <p className="text-xs text-gray-400 pl-4">
+                Token expires in ~
+                {Math.round(calendarStatus.accessTokenExpiresInSec / 60)}{" "}
+                minutes
               </p>
             )}
           </div>
         ) : (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-red-600">Not connected</p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-red-400"></div>
+              <p className="text-sm font-semibold text-red-400">
+                Not connected
+              </p>
+            </div>
             {calendarStatus.message && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-400 pl-4">
                 {calendarStatus.message}
               </p>
             )}
             {calendarStatus.error && (
-              <p className="text-xs text-red-500">{calendarStatus.error}</p>
+              <p className="text-xs text-red-400 pl-4">
+                {calendarStatus.error}
+              </p>
             )}
-            <Button className="mt-3" onClick={handleLinkCalendar}>
+            <Button
+              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleLinkCalendar}
+            >
               Link Calendar
             </Button>
           </div>
@@ -186,15 +232,17 @@ export default function DashboardPage() {
 
       {/* Calendar + Upcoming events */}
       {calendarStatus?.connected && (
-        <div className="rounded border p-4">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <div className="font-medium">Calendar</div>
+        <div className="rounded-2xl bg-gray-800 p-6 shadow-lg border border-gray-700">
+          <div className="mb-6 flex items-center justify-between gap-2">
+            <h3 className="text-lg font-semibold text-white">Calendar</h3>
             <Link href="/calendar">
-              <Button size="sm">Add Event</Button>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                View Calendar
+              </Button>
             </Link>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[2fr,1fr]">
+          <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
             <div>
               <CalendarView
                 events={calendarEvents}
@@ -203,7 +251,9 @@ export default function DashboardPage() {
               />
             </div>
             <div>
-              <div className="mb-2 text-sm font-medium">Upcoming Events</div>
+              <h4 className="mb-4 text-sm font-semibold text-white">
+                Upcoming Events
+              </h4>
               <CalendarEvents
                 events={upcomingEvents}
                 isLoading={eventsLoading}
@@ -219,9 +269,9 @@ export default function DashboardPage() {
 
 function Stat({ title, value }: { title: string; value: number | string }) {
   return (
-    <div className="rounded-xl border p-4">
-      <div className="text-sm text-muted-foreground">{title}</div>
-      <div className="mt-1 text-3xl font-semibold">{value}</div>
+    <div className="rounded-2xl bg-gray-800 p-6 shadow-lg border border-gray-700 transition-transform hover:scale-105">
+      <div className="text-sm font-medium text-gray-400 mb-2">{title}</div>
+      <div className="text-4xl font-bold text-white">{value}</div>
     </div>
   );
 }
