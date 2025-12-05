@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Collapsible from "@/components/groups/collapse-box";
+import { GroupAvailabilityView } from "@/components/groups/GroupAvailabilityView";
 import { useAuth } from "@/context/authContext";
 import { Group } from "@/types";
 
@@ -397,6 +398,19 @@ export default function GroupsPage() {
                       );
                     })}
                   </ul>
+                </div>
+
+                {/* Availability View */}
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <h3 className="text-sm font-semibold text-white mb-3">
+                    Group Availability
+                  </h3>
+                  <GroupAvailabilityView
+                    groupId={group.id}
+                    memberIds={group.memberIds || []}
+                    memberInfo={memberInfo}
+                    currentUser={currentUser}
+                  />
                 </div>
 
                 {group.ownerId === currentUser?.uid && (
