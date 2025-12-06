@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Collapsible from "@/components/groups/collapse-box";
 import { GroupAvailabilityView } from "@/components/groups/GroupAvailabilityView";
+import { GroupChatBox } from "@/components/groups/GroupChatBox";
 import { useAuth } from "@/context/authContext";
 import { Group } from "@/types";
 
@@ -351,57 +352,93 @@ export default function GroupsPage() {
         <div className="space-y-3">
           {groups.map((group) => (
             <Collapsible key={group.id} title={group.name}>
-              <div className="space-y-3">
-                <div className="text-sm">
-                  <span className="font-medium text-white">Join Code:</span>{" "}
-                  <span className="font-mono text-gray-300">{group.code}</span>
+              <div className="space-y-4">
+                {/* Top Section: Group Data and Chat Box */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Left: Group Data */}
+                  <div className="space-y-3">
+                    <div className="text-sm">
+                      <span className="font-medium text-white">Join Code:</span>{" "}
+                      <span className="font-mono text-gray-300">
+                        {group.code}
+                      </span>
+                    </div>
+
+                    <div className="text-sm">
+                      <div className="font-medium text-white mb-2">
+                        Members:
+                      </div>
+                      <ul className="space-y-1.5">
+                        {group.memberIds?.map((memberId) => {
+                          const member = memberInfo[memberId];
+                          const isOwner = memberId === group.ownerId;
+                          const isCurrentUser = memberId === currentUser?.uid;
+                          return (
+                            <li
+                              key={memberId}
+                              className="flex items-center gap-2 text-sm text-gray-300"
+                            >
+                              <svg
+                                className="h-4 w-4 text-gray-500"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                />
+                              </svg>
+                              <span>
+                                {member
+                                  ? isCurrentUser
+                                    ? "You"
+                                    : member.name
+                                  : "Loading..."}
+                              </span>
+                              {isOwner && (
+                                <span className="text-xs text-blue-400">
+                                  (Owner)
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+
+                    {group.ownerId === currentUser?.uid && (
+                      <div className="text-xs text-blue-400">
+                        You are the owner
+                      </div>
+                    )}
+                    {group.ownerId === currentUser?.uid ? (
+                      <Button
+                        onClick={() => handleDeleteGroup(group.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                      >
+                        Delete Group
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleLeaveGroup(group.id)}
+                        className="border-2 border-gray-600 hover:bg-gray-700 text-gray-200 font-semibold bg-gray-800"
+                      >
+                        Leave Group
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Right: Chat Box */}
+                  <div>
+                    <GroupChatBox groupId={group.id} groupName={group.name} />
+                  </div>
                 </div>
 
-                <div className="text-sm">
-                  <div className="font-medium text-white mb-2">Members:</div>
-                  <ul className="space-y-1.5">
-                    {group.memberIds?.map((memberId) => {
-                      const member = memberInfo[memberId];
-                      const isOwner = memberId === group.ownerId;
-                      const isCurrentUser = memberId === currentUser?.uid;
-                      return (
-                        <li
-                          key={memberId}
-                          className="flex items-center gap-2 text-sm text-gray-300"
-                        >
-                          <svg
-                            className="h-4 w-4 text-gray-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                          </svg>
-                          <span>
-                            {member
-                              ? isCurrentUser
-                                ? "You"
-                                : member.name
-                              : "Loading..."}
-                          </span>
-                          {isOwner && (
-                            <span className="text-xs text-blue-400">
-                              (Owner)
-                            </span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-
-                {/* Availability View */}
-                <div className="mt-4 pt-4 border-t border-gray-700">
+                {/* Bottom Section: Availability View (Calendar) */}
+                <div className="pt-4 border-t border-gray-700">
                   <h3 className="text-sm font-semibold text-white mb-3">
                     Group Availability
                   </h3>
@@ -412,25 +449,6 @@ export default function GroupsPage() {
                     currentUser={currentUser}
                   />
                 </div>
-
-                {group.ownerId === currentUser?.uid && (
-                  <div className="text-xs text-blue-400">You are the owner</div>
-                )}
-                {group.ownerId === currentUser?.uid ? (
-                  <Button
-                    onClick={() => handleDeleteGroup(group.id)}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold"
-                  >
-                    Delete Group
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => handleLeaveGroup(group.id)}
-                    className="border-2 border-gray-600 hover:bg-gray-700 text-gray-200 font-semibold bg-gray-800"
-                  >
-                    Leave Group
-                  </Button>
-                )}
               </div>
             </Collapsible>
           ))}
