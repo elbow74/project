@@ -67,13 +67,13 @@ export function CalendarEvents({
             </h3>
             {startDate && (
               <p className="text-xs font-medium opacity-75 mb-2">
-                {startDate.toLocaleDateString(undefined, {
+                {startDate.toLocaleDateString("en-US", {
                   weekday: "short",
                   month: "short",
                   day: "numeric",
                 })}{" "}
                 at{" "}
-                {startDate.toLocaleTimeString([], {
+                {startDate.toLocaleTimeString("en-US", {
                   hour: "numeric",
                   minute: "2-digit",
                 })}
