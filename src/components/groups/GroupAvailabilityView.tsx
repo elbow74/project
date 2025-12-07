@@ -22,7 +22,9 @@ export function GroupAvailabilityView({
   memberInfo,
   currentUser,
 }: GroupAvailabilityViewProps) {
-  const [currentWeek, setCurrentWeek] = useState(new Date());
+  // Initialize to null on both server and initial client render to keep markup stable.
+  // Populate the real date on the client in useEffect to avoid hydration mismatches.
+  const [currentWeek, setCurrentWeek] = useState<Date | null>(null);
   const [memberEvents, setMemberEvents] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
@@ -46,14 +48,16 @@ export function GroupAvailabilityView({
 
   // Fetch events for the current week
   useEffect(() => {
+  // Do not attempt to fetch until we have a concrete currentWeek on the client
+  if (currentWeek === null) return;
     (async () => {
       if (!currentUser || memberIds.length === 0) return;
 
       setLoading(true);
       try {
         const idToken = await currentUser.getIdToken();
-        const weekStart = getStartOfWeek(currentWeek);
-        const weekEnd = getEndOfWeek(currentWeek);
+  const weekStart = getStartOfWeek(currentWeek!);
+  const weekEnd = getEndOfWeek(currentWeek!);
 
         const timeMin = weekStart.toISOString();
         const timeMax = weekEnd.toISOString();
@@ -77,9 +81,16 @@ export function GroupAvailabilityView({
     })();
   }, [groupId, currentWeek, memberIds, currentUser]);
 
+  // Set currentWeek on the client only
+  useEffect(() => {
+    setCurrentWeek(new Date());
+  }, []);
+
   // Calculate available time slots with heat map data
   useEffect(() => {
-    const weekStart = getStartOfWeek(currentWeek);
+  if (currentWeek === null) return;
+
+  const weekStart = getStartOfWeek(currentWeek!);
     const slots: TimeSlot[] = [];
     const totalMembers = memberIds.length;
 
@@ -148,13 +159,13 @@ export function GroupAvailabilityView({
   }, [loading, currentWeek]);
 
   const goToPreviousWeek = () => {
-    const newDate = new Date(currentWeek);
+  const newDate = new Date(currentWeek!);
     newDate.setDate(newDate.getDate() - 7);
     setCurrentWeek(newDate);
   };
 
   const goToNextWeek = () => {
-    const newDate = new Date(currentWeek);
+  const newDate = new Date(currentWeek!);
     newDate.setDate(newDate.getDate() + 7);
     setCurrentWeek(newDate);
   };
@@ -162,6 +173,15 @@ export function GroupAvailabilityView({
   const goToToday = () => {
     setCurrentWeek(new Date());
   };
+
+  if (currentWeek === null) {
+    return (
+      <div className="text-center py-8">
+        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-blue-400"></div>
+        <p className="mt-2 text-sm text-gray-400">Loading availability...</p>
+      </div>
+    );
+  }
 
   const weekStart = getStartOfWeek(currentWeek);
   const weekEnd = getEndOfWeek(currentWeek);
@@ -234,12 +254,12 @@ export function GroupAvailabilityView({
             →
           </button>
           <div className="text-sm font-semibold text-white">
-            {weekStart.toLocaleDateString(undefined, {
+            {weekStart.toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
-            })}{" "}
-            -{" "}
-            {weekEnd.toLocaleDateString(undefined, {
+            })} {" "}
+            - {" "}
+            {weekEnd.toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
               year: "numeric",

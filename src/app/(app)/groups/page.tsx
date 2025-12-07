@@ -34,10 +34,10 @@ export default function GroupsPage() {
           headers: { Authorization: `Bearer ${idToken}` },
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          setGroups(data.groups || []);
-        }
+          if (res.ok) {
+            const data = await res.json();
+            setGroups(data.groups || []);
+          }
       } catch (error) {
         console.error("Failed to fetch groups:", error);
       } finally {
@@ -156,7 +156,6 @@ export default function GroupsPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
         setGroups((prev) => prev.filter((g) => g.id !== groupId));
       } else {
         const err = await res.json().catch(() => ({}));
@@ -167,10 +166,10 @@ export default function GroupsPage() {
       alert("Failed to leave group");
     }
   };
+
   const handleDeleteGroup = async (groupId: string) => {
     if (!currentUser) return;
 
-    // Optional: Add confirmation dialog
     if (
       !confirm(
         "Are you sure you want to delete this group? This action cannot be undone."
@@ -232,12 +231,14 @@ export default function GroupsPage() {
           >
             Join Group
           </Button>
-          <Button
+
+          {/* 🔵 Plain button so styling can't be overridden */}
+          <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+            className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm"
           >
             Create Group
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -353,9 +354,7 @@ export default function GroupsPage() {
           {groups.map((group) => (
             <Collapsible key={group.id} title={group.name}>
               <div className="space-y-4">
-                {/* Top Section: Group Data and Chat Box */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Left: Group Data */}
                   <div className="space-y-3">
                     <div className="text-sm">
                       <span className="font-medium text-white">Join Code:</span>{" "}
@@ -414,6 +413,7 @@ export default function GroupsPage() {
                         You are the owner
                       </div>
                     )}
+
                     {group.ownerId === currentUser?.uid ? (
                       <Button
                         onClick={() => handleDeleteGroup(group.id)}
@@ -431,13 +431,11 @@ export default function GroupsPage() {
                     )}
                   </div>
 
-                  {/* Right: Chat Box */}
                   <div>
                     <GroupChatBox groupId={group.id} groupName={group.name} />
                   </div>
                 </div>
 
-                {/* Bottom Section: Availability View (Calendar) */}
                 <div className="pt-4 border-t border-gray-700">
                   <h3 className="text-sm font-semibold text-white mb-3">
                     Group Availability

@@ -9,7 +9,7 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/calendar", label: "Calendar" },
   { href: "/groups", label: "Groups" },
-  { href: "/ai-assistant", label: "AI Assistant" },
+  //{ href: "/ai-assistant", label: "AI Assistant" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

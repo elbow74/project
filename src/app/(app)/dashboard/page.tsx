@@ -236,7 +236,7 @@ export default function DashboardPage() {
           <div className="mb-6 flex items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-white">Calendar</h3>
             <Link href="/calendar">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-black">
                 View Calendar
               </Button>
             </Link>

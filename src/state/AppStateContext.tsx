@@ -36,7 +36,17 @@ const DEMO = {
       attendees: ["u_1", "u_2"],
     },
   ],
-  groups: [],
+  groups: [
+    {
+      id: "g_1",
+      name: "Core Team",
+      ownerId: "u_1",
+      code: "CORE",
+      memberIds: ["u_1", "u_2"],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ],
   availability: [],
   linkStatus: false,
 };

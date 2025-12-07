@@ -192,7 +192,6 @@ export async function POST(req: NextRequest) {
       apiKey: process.env.GEMINI_API_KEY,
     });
 
-    // 5. Set up configuration with context-aware system instruction
     const systemInstructionText = isGroupContext
       ? `You are a calendar assistant for a group called "${groupName}". You will receive calendar data for ALL members of this group. The calendar data is organized by member name, with each member's events listed under their name.
 
@@ -205,17 +204,26 @@ Your rules:
 - Treat the provided calendar data as the source of truth.
 - Keep responses concise, factual, and helpful.
 - When mentioning events, specify which member has that event.
-- If the user tries to reference a date or event that is missing, ask them to provide it or clarify.`
-      : `You are a calendar assistant. For every conversation, you will receive the user's calendar data as input in the prompt. The calendar data may include events, titles, times, descriptions, attendees, reminders, and availability.
+- If the user references a date or event that is missing, ask them to clarify.
 
-Your rules:
-- Use ONLY the provided calendar data to answer questions.
-- Do NOT invent events or assume details that are not explicitly included.
-- If the user asks something that cannot be answered from the calendar data, say "This information is not in your calendar."
-- Treat the provided calendar data as the source of truth.
-- Keep responses concise, factual, and helpful.
-- If the user tries to reference a date or event that is missing, ask them to provide it or clarify.
-- Answer briefly and to the point with simple explanations.`;
+Formatting rules:
+- Always respond in clean, minimal Markdown (headings and lists are fine).
+- Use only the following sections, in this order when relevant:
+  1. Events
+  2. (Optional) Converted Times
+  3. Common Free Time
+- Do NOT include decorative stars, emojis, long explanations, or conversion reasoning.
+- Each event must be formatted as:
+  - Name: "Event title" — HH:MM–HH:MM (time zone)
+- For converted times (if needed):
+  - Name: HH:MM–HH:MM (converted zone)
+- For members with no events:
+  - Name: No scheduled events
+- Keep responses extremely concise — no filler text.
+- Do NOT explain how you performed conversions.
+- Do NOT add commentary, disclaimers, or narrative sentences.
+- Output only structured availability information.`
+      : `You are a calendar assistant for an individual user. Use ONLY the provided calendar data to answer questions about the user's schedule. Respond concisely in minimal Markdown. If the user asks something not present in the calendar data, reply: "This information is not in your calendar."`;
 
     const config = {
       thinkingConfig: {
@@ -269,9 +277,31 @@ Your rules:
       }
     }
 
-    // 10. Return response
+    // 10. Post-process and return response
+    // - normalize bullets
+    // - remove [Note: ...] annotations
+    // - strip ALL '*' characters so no bold/italic stars show up
+    // - collapse extra blank lines
+    let cleaned = fullResponse
+      .replace(/\r\n/g, "\n")
+      .split("\n")
+      .map((line) => {
+        // Normalize leading bullets (* or -) to "- "
+        const bulletNormalized = line.replace(/^\s*[-*]\s+/, "- ");
+        // Remove [Note: ...] annotations
+        const noNote = bulletNormalized.replace(/\[Note:[^\]]*\]/g, "");
+        return noNote.trimEnd();
+      })
+      .join("\n");
+
+    // Remove all remaining asterisks (Markdown bold/italic markers)
+    cleaned = cleaned.replace(/\*/g, "");
+
+    // Collapse 3+ blank lines into 2 and trim
+    cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+
     return NextResponse.json({
-      response: fullResponse,
+      response: cleaned,
       message: message,
     });
   } catch (error) {

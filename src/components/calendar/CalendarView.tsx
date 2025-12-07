@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 
 interface CalendarEvent {
   id?: string;
@@ -26,8 +27,42 @@ export function CalendarView({
   isLoading = false,
   error = null,
 }: CalendarViewProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // State
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
+
+  // Set currentDate on client only
+  useEffect(() => {
+    setCurrentDate(new Date());
+  }, []);
+
+  // --- Loading & error states (safe — no hooks below) ---
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-8 text-center">
+        <p className="text-white">Loading calendar...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-8 text-center">
+        <p className="text-red-400">{error}</p>
+      </div>
+    );
+  }
+
+  // Wait until we’ve initialized currentDate on the client
+  if (!currentDate) {
+    return (
+      <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-4">
+        Loading...
+      </div>
+    );
+  }
+
+  // ---------- Helper data & functions (no hooks below this line) ----------
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -61,7 +96,7 @@ export function CalendarView({
     return new Date(d.getFullYear(), d.getMonth(), diff);
   };
 
-  // Navigate months
+  // Navigation
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
   };
@@ -95,24 +130,13 @@ export function CalendarView({
     const dateTime = event.start?.dateTime;
     if (!dateTime) return "All day";
     const d = new Date(dateTime);
-    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return d.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
   };
 
-  if (isLoading) {
-    return (
-      <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-8 text-center">
-        <p className="text-white">Loading calendar...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-8 text-center">
-        <p className="text-red-400">{error}</p>
-      </div>
-    );
-  }
+  // ---------- Render ----------
 
   return (
     <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-4">
