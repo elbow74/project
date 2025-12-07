@@ -219,7 +219,7 @@ Name: "Event title" — HH:MM–HH:MM (time zone)
 Converted Times (only if requested)
 
 Common Free Time
-List only the exact time ranges when all members have no events for that entire day, calculated from their schedules.
+For the day being asked, list  the exact time ranges when all members have no events at the same time, calculated from their schedules.
 
 Output requirements:
 
