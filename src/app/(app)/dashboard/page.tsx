@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useAppState } from "@/state/AppStateContext";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/authContext";
@@ -17,6 +16,8 @@ type CalendarStatus = {
   message?: string;
 } | null;
 
+type EventsFilter = "30days" | "all";
+
 export default function DashboardPage() {
   const { events, groups } = useAppState();
   const { currentUser } = useAuth() as any;
@@ -25,7 +26,12 @@ export default function DashboardPage() {
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState<string | null>(null);
-  const [showCalendar, setShowCalendar] = useState(true); // ← calendar toggle
+
+  // calendar visibility toggle
+  const [showCalendar, setShowCalendar] = useState(true);
+
+  // upcoming-events filter toggle
+  const [eventsFilter, setEventsFilter] = useState<EventsFilter>("30days");
 
   // Check Google Calendar link status
   useEffect(() => {
@@ -90,22 +96,38 @@ export default function DashboardPage() {
     })();
   }, [currentUser, calendarStatus?.connected]);
 
-  // Derived upcoming events list (future only, sorted soonest-first)
+  // Derived upcoming events list (future only, with filter)
   const upcomingEvents = useMemo(() => {
-    return calendarEvents
-      .filter((event) => {
-        const start = event?.start?.dateTime || event?.start?.date;
-        if (!start) return false;
-        return new Date(start).getTime() > Date.now();
-      })
+    const now = Date.now();
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+    const horizon = now + THIRTY_DAYS_MS;
+
+    const filtered = calendarEvents.filter((event) => {
+      const startRaw = event?.start?.dateTime || event?.start?.date;
+      if (!startRaw) return false;
+
+      const startMs = new Date(startRaw).getTime();
+      if (Number.isNaN(startMs)) return false;
+
+      // always ignore past events
+      if (startMs < now) return false;
+
+      if (eventsFilter === "30days") {
+        return startMs <= horizon;
+      }
+
+      // "all" → any future event
+      return true;
+    });
+
+    return filtered
       .slice()
       .sort((a, b) => {
         const aDate = new Date(a.start.dateTime || a.start.date).getTime();
         const bDate = new Date(b.start.dateTime || b.start.date).getTime();
         return aDate - bDate;
-      })
-      .slice(0, 5);
-  }, [calendarEvents]);
+      });
+  }, [calendarEvents, eventsFilter]);
 
   const handleLinkCalendar = async () => {
     if (!currentUser) {
@@ -230,20 +252,26 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Calendar + Upcoming events */}
+      {/* Calendar + Upcoming events (events always visible; calendar toggleable) */}
       {calendarStatus?.connected && (
         <div className="rounded-2xl bg-gray-800 p-6 shadow-lg border border-gray-700">
           <div className="mb-6 flex items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-white">Calendar</h3>
             <Button
-              className="bg-gray-700 hover:bg-gray-600 text-black text-xs px-3 py-1"
-              onClick={() => setShowCalendar((prev) => !prev)}
+              className="bg-gray-700 hover:bg-gray-600 text-gray-100 text-xs px-3 py-1"
+              onClick={() => setShowCalendar((v) => !v)}
             >
-              {showCalendar ? "Hide Calendar" : "Show Calendar"}
+              {showCalendar ? "Hide calendar" : "Show calendar"}
             </Button>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
+          <div
+            className={
+              showCalendar
+                ? "grid gap-6 lg:grid-cols-[2fr,1fr]"
+                : "grid gap-6 lg:grid-cols-1"
+            }
+          >
             {showCalendar && (
               <div>
                 <CalendarView
@@ -253,11 +281,36 @@ export default function DashboardPage() {
                 />
               </div>
             )}
-            {/* Upcoming events should always display */}
-            <div className={showCalendar ? "" : "lg:col-span-2"}>
-              <h4 className="mb-4 text-sm font-semibold text-white">
-                Upcoming Events
-              </h4>
+
+            <div>
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold text-white">
+                  Upcoming Events
+                </h4>
+                <div className="flex gap-2">
+                  <Button
+                    className={`text-xs px-3 py-1 ${
+                      eventsFilter === "30days"
+                        ? "bg-blue-600 text-black hover:bg-blue-700"
+                        : "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                    }`}
+                    onClick={() => setEventsFilter("30days")}
+                  >
+                    Next 30 days
+                  </Button>
+                  <Button
+                    className={`text-xs px-3 py-1 ${
+                      eventsFilter === "all"
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                    }`}
+                    onClick={() => setEventsFilter("all")}
+                  >
+                    All future
+                  </Button>
+                </div>
+              </div>
+
               <CalendarEvents
                 events={upcomingEvents}
                 isLoading={eventsLoading}
