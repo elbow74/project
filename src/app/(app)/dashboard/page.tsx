@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(true); // ← calendar toggle
 
   // Check Google Calendar link status
   useEffect(() => {
@@ -74,7 +75,6 @@ export default function DashboardPage() {
         const result = await fetchCalendarEvents(idToken);
 
         if (result && result.events) {
-          // Google Calendar API returns events in data.events.items
           const eventsData = result.events as any;
           const eventItems = eventsData.items || eventsData || [];
           setCalendarEvents(Array.isArray(eventItems) ? eventItems : []);
@@ -90,7 +90,7 @@ export default function DashboardPage() {
     })();
   }, [currentUser, calendarStatus?.connected]);
 
-  // Derived upcoming events list (sorted soonest-first, limited)
+  // Derived upcoming events list (future only, sorted soonest-first)
   const upcomingEvents = useMemo(() => {
     return calendarEvents
       .filter((event) => {
@@ -235,22 +235,26 @@ export default function DashboardPage() {
         <div className="rounded-2xl bg-gray-800 p-6 shadow-lg border border-gray-700">
           <div className="mb-6 flex items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-white">Calendar</h3>
-            <Link href="/calendar">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-black">
-                View Calendar
-              </Button>
-            </Link>
+            <Button
+              className="bg-gray-700 hover:bg-gray-600 text-black text-xs px-3 py-1"
+              onClick={() => setShowCalendar((prev) => !prev)}
+            >
+              {showCalendar ? "Hide Calendar" : "Show Calendar"}
+            </Button>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-            <div>
-              <CalendarView
-                events={calendarEvents}
-                isLoading={eventsLoading}
-                error={eventsError}
-              />
-            </div>
-            <div>
+            {showCalendar && (
+              <div>
+                <CalendarView
+                  events={calendarEvents}
+                  isLoading={eventsLoading}
+                  error={eventsError}
+                />
+              </div>
+            )}
+            {/* Upcoming events should always display */}
+            <div className={showCalendar ? "" : "lg:col-span-2"}>
               <h4 className="mb-4 text-sm font-semibold text-white">
                 Upcoming Events
               </h4>
