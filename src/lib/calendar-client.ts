@@ -1,27 +1,36 @@
-// /lib/calendar-client.ts
+// src/lib/calendar-client.ts
 // Client-side functions for fetching calendar events from the API
 
+export type CalendarEventsResponse = {
+  events: any[];
+};
+
 /**
- * Fetch calendar events for the current user
+ * Fetch calendar events for the current user (client-side helper).
  */
 export async function fetchCalendarEvents(
   idToken: string
-): Promise<{ events: any[] } | null> {
+): Promise<CalendarEventsResponse | null> {
   try {
     const response = await fetch("/api/calendar/events", {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },
+      cache: "no-store",
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
-        return null; // User not authorized
+      // Treat auth failures as "no events" rather than crashing the UI
+      if (response.status === 401 || response.status === 403) {
+        console.warn("User not authorized to fetch calendar events");
+        return null;
       }
-      throw new Error(`Failed to fetch events: ${response.status}`);
+
+      console.error("Failed to fetch events:", response.status);
+      return null;
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as CalendarEventsResponse;
     return data;
   } catch (error) {
     console.error("Error fetching calendar events:", error);
