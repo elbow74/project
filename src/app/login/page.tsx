@@ -33,38 +33,65 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mb-4 shadow-lg">
-            <svg
-              className="h-8 w-8 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
+      </div>
+
+      <div className="max-w-md w-full space-y-10 relative z-10">
+        {/* Header with Bubble Letters */}
+        <div className="text-center space-y-6">
+          {/* Bubble Letter Logo */}
+          <div className="flex items-center justify-center mb-2">
+            <h1 
+              className="text-7xl md:text-8xl font-black relative inline-block select-none"
+              style={{
+                fontFamily: "system-ui, -apple-system, 'SF Pro Display', sans-serif",
+                letterSpacing: "-0.02em",
+                fontWeight: 900,
+                background: "linear-gradient(135deg, #60a5fa 0%, #818cf8 30%, #a78bfa 60%, #c084fc 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                textShadow: `
+                  3px 3px 0px rgba(96, 165, 250, 0.4),
+                  6px 6px 0px rgba(96, 165, 250, 0.2),
+                  9px 9px 15px rgba(0, 0, 0, 0.3),
+                  0 0 50px rgba(96, 165, 250, 0.2)
+                `,
+                filter: "drop-shadow(0 8px 16px rgba(96, 165, 250, 0.25))",
+                transform: "perspective(1200px) rotateX(3deg) scale(1)",
+                lineHeight: "1.05",
+                WebkitTextStroke: "1px rgba(96, 165, 250, 0.1)",
+              }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
+              grouply
+            </h1>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Calendar Assistant
-          </h1>
-          <p className="text-gray-400">Sign in to your account</p>
+
+          {/* Made by text */}
+          <div className="space-y-1">
+            <p className="text-sm text-gray-400 font-light tracking-wider uppercase">
+              made by
+            </p>
+            <p className="text-base text-gray-300 font-medium tracking-wide">
+              mukund, elton, and bhrugu
+            </p>
+          </div>
         </div>
 
         {/* Login Form */}
-        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+        <div className="bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-gray-700/50">
           <form onSubmit={onGoogleSignIn} className="space-y-6">
+            <div className="text-center mb-6">
+              <p className="text-gray-300 text-sm font-medium">Sign in to continue</p>
+            </div>
             <Button
               type="submit"
               disabled={isSigningIn}
-              className="w-full bg-white text-gray-900 border-2 border-gray-600 hover:bg-gray-100 hover:border-gray-500 flex items-center justify-center gap-3 py-6 text-base font-medium shadow-sm transition-all"
+              className="w-full bg-white text-gray-900 border-2 border-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:shadow-lg flex items-center justify-center gap-3 py-6 text-base font-semibold shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
                 <path
@@ -87,19 +114,6 @@ export default function LoginPage() {
               {isSigningIn ? "Signing in..." : "Continue with Google"}
             </Button>
           </form>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center text-sm text-gray-400">
-          <p>
-            Don't have an account?{" "}
-            <a
-              href="#"
-              className="font-semibold text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              Sign up
-            </a>
-          </p>
         </div>
       </div>
     </div>

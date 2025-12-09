@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Collapsible from "@/components/groups/collapse-box";
 import { GroupAvailabilityView } from "@/components/groups/GroupAvailabilityView";
 import { GroupChatBox } from "@/components/groups/GroupChatBox";
+import { AllGroupsChatBox } from "@/components/groups/AllGroupsChatBox";
 import { useAuth } from "@/context/authContext";
 import { Group } from "@/types";
 
@@ -19,6 +20,57 @@ export default function GroupsPage() {
   const [memberInfo, setMemberInfo] = useState<
     Record<string, { name: string; email: string }>
   >({});
+  const [showAllGroupsChat, setShowAllGroupsChat] = useState(false);
+  
+  // Draggable button state
+  const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStateRef = useRef({ isDragging: false, dragStart: { x: 0, y: 0 }, hasMoved: false, startPosition: { x: 0, y: 0 } });
+
+  // Load button position from localStorage on mount
+  useEffect(() => {
+    const savedPosition = localStorage.getItem("allGroupsChatButtonPosition");
+    if (savedPosition) {
+      try {
+        const { x, y } = JSON.parse(savedPosition);
+        // Validate position is within bounds
+        const buttonSize = 56;
+        const validX = Math.max(0, Math.min(x, window.innerWidth - buttonSize));
+        const validY = Math.max(0, Math.min(y, window.innerHeight - buttonSize));
+        setButtonPosition({ x: validX, y: validY });
+      } catch (e) {
+        // Use default position if parsing fails
+        const buttonSize = 56;
+        setButtonPosition({ x: window.innerWidth - buttonSize - 24, y: 24 });
+      }
+    } else {
+      // Default position: top right
+      const buttonSize = 56;
+      setButtonPosition({ x: window.innerWidth - buttonSize - 24, y: 24 });
+    }
+  }, []);
+
+  // Save button position to localStorage when it changes
+  useEffect(() => {
+    if (buttonPosition.x !== 0 || buttonPosition.y !== 0) {
+      localStorage.setItem(
+        "allGroupsChatButtonPosition",
+        JSON.stringify(buttonPosition)
+      );
+    }
+  }, [buttonPosition]);
+
+  // Handle window resize to keep button in bounds
+  useEffect(() => {
+    const handleResize = () => {
+      setButtonPosition((prev) => ({
+        x: Math.min(prev.x, window.innerWidth - 56),
+        y: Math.min(prev.y, window.innerHeight - 56),
+      }));
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Fetch user's groups
   useEffect(() => {
@@ -199,6 +251,76 @@ export default function GroupsPage() {
     }
   };
 
+  // Drag handlers for the floating button
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    dragStateRef.current = {
+      isDragging: true,
+      dragStart: {
+        x: e.clientX - buttonPosition.x,
+        y: e.clientY - buttonPosition.y,
+      },
+      hasMoved: false,
+      startPosition: { ...buttonPosition },
+    };
+    setIsDragging(true);
+  };
+
+  // Add global mouse event listeners for dragging
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragStateRef.current.isDragging) return;
+
+      const newX = e.clientX - dragStateRef.current.dragStart.x;
+      const newY = e.clientY - dragStateRef.current.dragStart.y;
+
+      // Check if user has actually moved the mouse (more than 5px)
+      const moved =
+        Math.abs(newX - dragStateRef.current.startPosition.x) > 5 ||
+        Math.abs(newY - dragStateRef.current.startPosition.y) > 5;
+      if (moved) {
+        dragStateRef.current.hasMoved = true;
+      }
+
+      // Constrain to viewport bounds
+      const buttonSize = 56; // h-14 = 56px
+      const constrainedX = Math.max(
+        0,
+        Math.min(newX, window.innerWidth - buttonSize)
+      );
+      const constrainedY = Math.max(
+        0,
+        Math.min(newY, window.innerHeight - buttonSize)
+      );
+
+      setButtonPosition({ x: constrainedX, y: constrainedY });
+    };
+
+    const handleMouseUp = () => {
+      if (dragStateRef.current.isDragging) {
+        const wasJustClick = !dragStateRef.current.hasMoved;
+        dragStateRef.current.isDragging = false;
+        setIsDragging(false);
+        
+        // Only open modal if user didn't drag (just clicked)
+        if (wasJustClick) {
+          setShowAllGroupsChat(true);
+        }
+        
+        dragStateRef.current.hasMoved = false;
+      }
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isDragging, buttonPosition]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -241,6 +363,44 @@ export default function GroupsPage() {
           </button>
         </div>
       </div>
+
+      {/* Floating AI Chat Button */}
+      <button
+        onMouseDown={handleMouseDown}
+        style={{
+          position: "fixed",
+          left: `${buttonPosition.x}px`,
+          top: `${buttonPosition.y}px`,
+          cursor: isDragging ? "grabbing" : "grab",
+        }}
+        className={`h-14 w-14 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl flex items-center justify-center z-40 group select-none ${
+          isDragging ? "scale-105" : "transition-all duration-200"
+        }`}
+        title="AI Assistant - Find common times across all groups (Drag to move)"
+      >
+        <svg
+          className="h-6 w-6 group-hover:scale-110 transition-transform"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+          />
+        </svg>
+      </button>
+
+      {/* All Groups Chat Modal */}
+      {showAllGroupsChat && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl border border-gray-700">
+            <AllGroupsChatBox onClose={() => setShowAllGroupsChat(false)} />
+          </div>
+        </div>
+      )}
 
       {/* Create Group Modal */}
       {showCreateModal && (

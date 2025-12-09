@@ -3,7 +3,7 @@
 // npm install -D @types/node
 
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUserIdFromSession } from "@/lib/db";
+import { getCurrentUserIdFromSession, getGroupsForUser } from "@/lib/db";
 import { GoogleGenAI } from "@google/genai";
 import { getRefreshTokenForUser } from "@/lib/db";
 import { refreshAccessToken } from "@/lib/google-token-refresh";
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Parse request body
     const body = await req.json();
-    const { message, calendarData: clientCalendarData, groupId } = body;
+    const { message, calendarData: clientCalendarData, groupId, allGroups } = body;
 
     if (
       !message ||
@@ -106,7 +106,84 @@ export async function POST(req: NextRequest) {
     let isGroupContext = false;
     let groupName = "";
 
-    if (groupId) {
+    if (allGroups) {
+      // All groups context: fetch calendar events for all members of all groups
+      try {
+        const userGroups = await getGroupsForUser(userId);
+        
+        if (userGroups.length === 0) {
+          calendarData = "No groups found.";
+        } else {
+          // Calculate time range (next 30 days)
+          const now = new Date();
+          const timeMin = now.toISOString();
+          const timeMax = new Date(
+            now.getTime() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString();
+
+          // Collect all unique member IDs from all groups
+          const allMemberIds = new Set<string>();
+          userGroups.forEach((group) => {
+            if (group.memberIds) {
+              group.memberIds.forEach((memberId) => allMemberIds.add(memberId));
+            }
+          });
+
+          // Fetch events for all members across all groups
+          const memberEvents: Record<string, any[]> = {};
+          const memberNames: Record<string, string> = {};
+          const memberGroupMap: Record<string, string[]> = {}; // Track which groups each member belongs to
+
+          // Build member-to-groups mapping
+          userGroups.forEach((group) => {
+            if (group.memberIds) {
+              group.memberIds.forEach((memberId) => {
+                if (!memberGroupMap[memberId]) {
+                  memberGroupMap[memberId] = [];
+                }
+                memberGroupMap[memberId].push(group.name);
+              });
+            }
+          });
+
+          await Promise.all(
+            Array.from(allMemberIds).map(async (memberId) => {
+              const events = await getEventsForUser(memberId, timeMin, timeMax);
+              memberEvents[memberId] = events;
+              memberNames[memberId] = await getUserName(memberId);
+            })
+          );
+
+          // Format calendar data with member information and their groups
+          const formattedData: Record<string, any> = {};
+          for (const [memberId, events] of Object.entries(memberEvents)) {
+            const memberName = memberNames[memberId];
+            const groups = memberGroupMap[memberId] || [];
+            formattedData[memberName] = {
+              events: events,
+              groups: groups,
+            };
+          }
+
+          const groupNames = userGroups.map((g) => g.name).join(", ");
+
+          calendarData = JSON.stringify({
+            allGroups: true,
+            groupNames: groupNames,
+            members: formattedData,
+          });
+
+          groupName = `All Groups (${groupNames})`;
+          isGroupContext = true;
+        }
+      } catch (error) {
+        console.error("Failed to fetch all groups calendar data:", error);
+        return NextResponse.json(
+          { error: "Failed to fetch all groups calendar data" },
+          { status: 500 }
+        );
+      }
+    } else if (groupId) {
       // Group context: fetch calendar events for all group members
       try {
         const groupDoc = await db.collection("groups").doc(groupId).get();
