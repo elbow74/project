@@ -1,15 +1,16 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
 import { AppStateProvider } from "@/state/AppStateContext";
 import { Button } from "@/components/ui/button";
 import { doSignOut } from "@/app/firebase/auth";
+
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/calendar", label: "Calendar" },
   { href: "/groups", label: "Groups" },
-  //{ href: "/ai-assistant", label: "AI Assistant" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -18,8 +19,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     try {
-      await doSignOut(); // Firebase session cleared
-      router.replace("/login"); // UI redirect
+      await doSignOut();
+      router.replace("/login");
     } catch (e) {
       console.error(e);
     }
@@ -35,6 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <p className="mt-1 text-xs text-gray-400">Manage your schedule</p>
           </div>
+
           <nav className="space-y-1 flex-1">
             {NAV.map((n) => (
               <Link
@@ -50,6 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
+
           <div className="mt-auto pt-4 border-t border-gray-700">
             <Button
               onClick={handleLogout}
@@ -60,7 +63,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         </aside>
-        <main className="flex-1 p-8 overflow-auto bg-gray-900">{children}</main>
+
+        <main className="flex-1 p-8 overflow-auto bg-gray-900">
+          {children}
+        </main>
+
         <Toaster />
       </div>
     </AppStateProvider>

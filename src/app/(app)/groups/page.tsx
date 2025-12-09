@@ -7,11 +7,12 @@ import { GroupChatBox } from "@/components/groups/GroupChatBox";
 import { AllGroupsChatBox } from "@/components/groups/AllGroupsChatBox";
 import { useAuth } from "@/context/authContext";
 import { Group } from "@/types";
+import { useAppState } from "@/state/AppStateContext"
 
 export default function GroupsPage() {
   const auth = useAuth() as { currentUser: any } | null;
   const currentUser = auth?.currentUser;
-  const [groups, setGroups] = useState<Group[]>([]);
+  const { groups, setGroups } = useAppState();
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
